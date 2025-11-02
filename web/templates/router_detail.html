@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Router Detail - NetFlow</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <h1>Router: {{ router_ip }}</h1>
+    <h2>NetFlow Export Configuration History</h2>
+
+    {% for doc in details %}
+    <div class="netflow-entry">
+      <h3>
+        📅 {{ doc.timestamp.strftime('%Y-%m-%d %H:%M:%S') if doc.timestamp else
+        'N/A' }}
+      </h3>
+
+      {% if doc.netflow_data and doc.netflow_data.output %} {% set output =
+      doc.netflow_data.output %}
+
+      <table>
+        <thead>
+          <tr>
+            <th>Configuration Parameter</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Export Status -->
+          <tr>
+            <td><strong>Export Status</strong></td>
+            <td>
+              {% if 'enabled' in output.lower() %}
+              <span style="color: green; font-weight: bold">✓ Enabled</span>
+              {% else %}
+              <span style="color: red; font-weight: bold">✗ Disabled</span>
+              {% endif %}
+            </td>
+          </tr>
+
+          <!-- NetFlow Version -->
+          {% if 'Version 5' in output or 'v5' in output %}
+          <tr>
+            <td><strong>NetFlow Version</strong></td>
+            <td>Version 5</td>
+          </tr>
+          {% elif 'Version 9' in output or 'v9' in output %}
+          <tr>
+            <td><strong>NetFlow Version</strong></td>
+            <td>Version 9</td>
+          </tr>
+          {% endif %}
+
+          <!-- VRF -->
+          {% for line in output.split('\n') %} {% if 'VRF ID' in line %}
+          <tr>
+            <td><strong>VRF ID</strong></td>
+            <td>
+              {{ line.split(':')[1].strip() if ':' in line else 'Default' }}
+            </td>
+          </tr>
+          {% endif %}
+
+          <!-- Source -->
+          {% if 'Source(' in line %}
+          <tr>
+            <td><strong>Export Source</strong></td>
+            <td>{{ line.strip() }}</td>
+          </tr>
+          {% endif %}
+
+          <!-- Destination -->
+          {% if 'Destination(' in line %}
+          <tr>
+            <td><strong>Export Destination</strong></td>
+            <td>{{ line.strip() }}</td>
+          </tr>
+          {% endif %}
+
+          <!-- Flows exported -->
+          {% if 'flows exported' in line.lower() %}
+          <tr>
+            <td><strong>Flows Exported</strong></td>
+            <td>{{ line.strip() }}</td>
+          </tr>
+          {% endif %}
+
+          <!-- UDP datagrams -->
+          {% if 'udp datagrams' in line.lower() %}
+          <tr>
+            <td><strong>UDP Datagrams</strong></td>
+            <td>{{ line.strip() }}</td>
+          </tr>
+          {% endif %}
+
+          <!-- Errors and Drops -->
+          {% if 'failed' in line.lower() or 'dropped' in line.lower() %}
+          <tr>
+            <td>
+              {{ line.split()[0:5]|join(' ') if line.split()|length > 5 else
+              line.strip() }}
+            </td>
+            <td>
+              {% set value = line.strip().split()[0] %} {% if value == '0' %}
+              <span style="color: green">{{ line.strip() }}</span>
+              {% else %}
+              <span style="color: orange">{{ line.strip() }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endif %} {% endfor %}
+        </tbody>
+      </table>
+
+      {% else %}
+      <p style="color: red">⚠️ No NetFlow data available.</p>
+      {% endif %}
+    </div>
+    {% endfor %} {% if not details %}
+    <div class="netflow-entry">
+      <p style="color: orange">⚠️ No NetFlow history found for this router.</p>
+    </div>
+    {% endif %}
+
+    <p><a href="{{ url_for('index') }}">← Back to Router List</a></p>
+  </body>
+</html>
