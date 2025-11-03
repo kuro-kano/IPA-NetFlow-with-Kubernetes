@@ -4,9 +4,7 @@ from pymongo import MongoClient
 from datetime import datetime, UTC
 
 def save_netflow_status(router_ip, router_hostname, netflow_data):
-    """
-    บันทึก netflow status ลง MongoDB
-    """
+    """Save netflow status to MongoDB"""
     MONGO_URI = os.getenv("MONGO_URI")
     DB_NAME = os.getenv("DB_NAME")
     
@@ -17,14 +15,11 @@ def save_netflow_status(router_ip, router_hostname, netflow_data):
     
     try:
         client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-        
-        # ทดสอบการเชื่อมต่อ
         client.server_info()
         
         db = client[DB_NAME]
         collection = db["netflow_status"]
         
-        # เตรียมข้อมูลที่จะบันทึก
         data = {
             "router_ip": router_ip,
             "router_hostname": router_hostname,
@@ -33,14 +28,12 @@ def save_netflow_status(router_ip, router_hostname, netflow_data):
             "status": "success"
         }
         
-        # บันทึกลง database
         result = collection.insert_one(data)
-        print(f"📝 Inserted document with ID: {result.inserted_id}")
         
         return result.inserted_id
         
     except Exception as e:
-        print(f"❌ Database error: {e}")
+        print(f"Database error: {e}")
         raise
         
     finally:
@@ -48,9 +41,7 @@ def save_netflow_status(router_ip, router_hostname, netflow_data):
             client.close()
 
 def get_router_credentials(router_ip):
-    """
-    ดึง credentials ของ router จาก database
-    """
+    """Get router credentials from database"""
     MONGO_URI = os.getenv("MONGO_URI")
     DB_NAME = os.getenv("DB_NAME")
     
@@ -67,12 +58,3 @@ def get_router_credentials(router_ip):
     finally:
         if client:
             client.close()
-
-if __name__ == "__main__":
-    # ทดสอบการบันทึก
-    test_data = {
-        "output": "Test netflow data",
-        "interfaces": []
-    }
-    save_netflow_status("192.168.1.1", "test-router", test_data)
-    print("Test completed!")

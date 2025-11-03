@@ -10,10 +10,7 @@ from netmiko.exceptions import (
 )
 
 def get_netflow_config(ip, username, password):
-    """
-    เชื่อมต่อไปยัง Cisco router และดึง netflow configuration
-    """
-    # กำหนด device parameters
+    """Connect to router and retrieve netflow config"""
     device = {
         "device_type": "cisco_ios",
         "host": ip,
@@ -30,19 +27,12 @@ def get_netflow_config(ip, username, password):
     conn = None
     
     try:
-        print(f"  Establishing SSH connection to {ip}...")
         conn = ConnectHandler(**device)
-        
+
         print(f"  Entering enable mode...")
         conn.enable()
-        
-        print(f"  Executing 'show ip flow export'...")
         flow_export = conn.send_command("show ip flow export", delay_factor=2)
-        
-        print(f"  Executing 'show ip cache flow'...")
         cache_flow = conn.send_command("show ip cache flow", delay_factor=2)
-        
-        print(f"  Executing 'show ip interface brief'...")
         interfaces = conn.send_command("show ip interface brief", delay_factor=2)
         
         result = {
@@ -52,14 +42,11 @@ def get_netflow_config(ip, username, password):
             "status": "success"
         }
         
-        print(f"  ✅ Successfully retrieved netflow data")
-        print(f"  Output size: {len(json.dumps(result))} bytes")
-        
         return result
         
     except NetmikoTimeoutException as e:
         error_msg = f"Timeout connecting to {ip}: {e}"
-        print(f"  ❌ {error_msg}")
+        print(f"  {error_msg}")
         return {
             "error": error_msg,
             "status": "timeout"
@@ -67,7 +54,7 @@ def get_netflow_config(ip, username, password):
         
     except NetmikoAuthenticationException as e:
         error_msg = f"Authentication failed for {ip}: {e}"
-        print(f"  ❌ {error_msg}")
+        print(f"  {error_msg}")
         return {
             "error": error_msg,
             "status": "auth_failed"
@@ -75,7 +62,7 @@ def get_netflow_config(ip, username, password):
         
     except SSHException as e:
         error_msg = f"SSH error connecting to {ip}: {e}"
-        print(f"  ❌ {error_msg}")
+        print(f"  {error_msg}")
         return {
             "error": error_msg,
             "status": "ssh_error"
@@ -83,7 +70,7 @@ def get_netflow_config(ip, username, password):
         
     except Exception as e:
         error_msg = f"Unexpected error: {e}"
-        print(f"  ❌ {error_msg}")
+        print(f"  {error_msg}")
         traceback.print_exc()
         return {
             "error": error_msg,
@@ -92,17 +79,5 @@ def get_netflow_config(ip, username, password):
         
     finally:
         if conn:
-            try:
-                conn.disconnect()
-                print(f"  🔌 Disconnected from {ip}")
-            except:
-                pass
+            conn.disconnect()
 
-if __name__ == "__main__":
-    # ทดสอบการเชื่อมต่อ
-    test_ip = "192.168.1.1"
-    test_user = "admin"
-    test_pass = "cisco"
-    
-    result = get_netflow_config(test_ip, test_user, test_pass)
-    print(json.dumps(result, indent=2))

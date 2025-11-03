@@ -6,10 +6,7 @@ from producer import produce
 from database import get_router_info
 
 def scheduler():
-    """
-    Scheduler หลักที่รัน loop เพื่อส่ง job ไปยัง Worker
-    """
-    # อ่านค่า interval จาก environment หรือใช้ default 60 วินาที
+    """Main scheduler loop to send jobs to workers"""
     INTERVAL = float(os.getenv("SCHEDULER_INTERVAL", "60"))
     RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq-svc")
     
@@ -21,7 +18,6 @@ def scheduler():
     next_run = time.monotonic()
     count = 0
     
-    # รอให้ RabbitMQ และ MongoDB พร้อม
     print("Waiting for services to be ready...")
     time.sleep(10)
     
@@ -34,19 +30,14 @@ def scheduler():
             
             print(f"\n[{now_str_with_ms}] === Run #{count} ===")
             
-            # ดึงข้อมูล router จาก database
             router_data = get_router_info()
             
             if not router_data:
                 print("No routers found in database")
             else:
-                # ส่ง job สำหรับแต่ละ router
                 for idx, data in enumerate(router_data):
                     try:
-                        # แปลง BSON เป็น JSON bytes
                         body_bytes = json_util.dumps(data).encode("utf-8")
-                        
-                        # ส่งไปยัง RabbitMQ
                         produce(RABBITMQ_HOST, body_bytes)
                         
                         router_info = data.get('hostname', data.get('ip', 'unknown'))
@@ -67,22 +58,8 @@ def scheduler():
         count += 1
         next_run += INTERVAL
         
-        # คำนวณเวลาที่ต้องรอจนถึงรอบถัดไป
         sleep_time = max(0.0, next_run - time.monotonic())
         
         if sleep_time > 0:
             print(f"Sleeping for {sleep_time:.2f} seconds until next run...")
             time.sleep(sleep_time)
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("NetFlow Scheduler Starting...")
-    print("=" * 60)
-    
-    try:
-        scheduler()
-    except KeyboardInterrupt:
-        print("\nScheduler stopped by user")
-    except Exception as e:
-        print(f"\nScheduler crashed: {e}")
-        raise

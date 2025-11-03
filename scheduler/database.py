@@ -3,7 +3,7 @@ import os
 from pymongo import MongoClient
 
 def get_router_info():
-    """ดึงข้อมูล Router ทั้งหมดจาก MongoDB"""
+    """Get all routers from MongoDB"""
     mongo_uri = os.environ.get("MONGO_URI")
     db_name = os.environ.get("DB_NAME")
     
@@ -15,7 +15,6 @@ def get_router_info():
         db = client[db_name]
         routers = db["routers"]
         
-        # ดึงข้อมูล router ทั้งหมดที่ active
         router_data = list(routers.find({"status": {"$ne": "inactive"}}))
         
         print(f"Found {len(router_data)} routers in database")
@@ -27,8 +26,3 @@ def get_router_info():
     finally:
         if 'client' in locals():
             client.close()
-
-if __name__ == "__main__":
-    routers = get_router_info()
-    for router in routers:
-        print(router)

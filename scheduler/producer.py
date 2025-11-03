@@ -4,7 +4,7 @@ import pika
 import time
 
 def produce(host, body):
-    """ส่ง job ไปยัง RabbitMQ"""
+    """produce message to RabbitMQ"""
     rabbitmq_user = os.getenv("RABBITMQ_DEFAULT_USER", "guest")
     rabbitmq_pass = os.getenv("RABBITMQ_DEFAULT_PASS", "guest")
     
@@ -16,7 +16,6 @@ def produce(host, body):
     
     for attempt in range(max_retries):
         try:
-            # สร้าง connection
             credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
             parameters = pika.ConnectionParameters(
                 host=host,
@@ -27,7 +26,6 @@ def produce(host, body):
             connection = pika.BlockingConnection(parameters)
             channel = connection.channel()
             
-            # ประกาศ exchange และ queue
             channel.exchange_declare(
                 exchange="jobs",
                 exchange_type="direct",
@@ -45,13 +43,12 @@ def produce(host, body):
                 routing_key="check_interfaces"
             )
             
-            # ส่ง message
             channel.basic_publish(
                 exchange="jobs",
                 routing_key="check_interfaces",
                 body=body,
                 properties=pika.BasicProperties(
-                    delivery_mode=2,  # make message persistent
+                    delivery_mode=2,
                 )
             )
             
@@ -69,8 +66,3 @@ def produce(host, body):
         except Exception as e:
             print(f"Error publishing message: {e}")
             raise
-
-if __name__ == "__main__":
-    # ทดสอบการส่ง message
-    test_body = '{"ip": "192.168.1.44", "hostname": "test-router"}'
-    produce("localhost", test_body.encode('utf-8'))
