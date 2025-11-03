@@ -9,7 +9,7 @@ def get_router_info():
 
     client = MongoClient(mongo_uri)
     db = client[db_name]
-    routers = db["routers"]
+    routers = db["netflowdb"]
 
     router_data = routers.find()
     return router_data
