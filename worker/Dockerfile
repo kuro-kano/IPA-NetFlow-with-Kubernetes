@@ -1,5 +1,23 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
+
 WORKDIR /app
-COPY . /app
-RUN pip install -r requirements.txt 
-CMD ["python3", "-u", "worker.py"]
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY callback.py .
+COPY consumer.py .
+COPY database.py .
+COPY router_client.py .
+COPY worker.py .
+
+# Run worker
+CMD ["python", "-u", "worker.py"]
