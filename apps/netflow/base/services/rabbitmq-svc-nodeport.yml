@@ -1,0 +1,16 @@
+# rabbitmq-svc-nodeport.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-management
+  namespace: netflow
+spec:
+  type: NodePort
+  selector:
+    app: rabbitmq
+  ports:
+  - name: management
+    port: 15672
+    targetPort: 15672
+    nodePort: 31567
+

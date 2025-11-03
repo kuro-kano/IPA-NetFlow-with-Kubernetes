@@ -1,0 +1,46 @@
+# scheduler-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+  namespace: netflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduler
+  template:
+    metadata:
+      labels:
+        app: scheduler
+    spec:
+      containers:
+      - name: scheduler
+        image: kurokano/scheduler:v1.0
+        env:
+        - name: RABBITMQ_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: configmap
+              key: RABBITMQ_HOST
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: configmap
+              key: DB_NAME
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: secret-value
+              key: RABBITMQ_DEFAULT_USER
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: secret-value
+              key: RABBITMQ_DEFAULT_PASS
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: secret-value
+              key: MONGO_URI
+

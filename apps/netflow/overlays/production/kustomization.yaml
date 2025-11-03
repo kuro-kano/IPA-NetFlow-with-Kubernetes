@@ -1,0 +1,16 @@
+# apps/netflow/overlays/production/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+namespace: netflow
+
+patchesStrategicMerge:
+  - patches/web-deployment-patch.yaml
+  - patches/worker-deployment-patch.yaml
+
+commonLabels:
+  environment: production
+

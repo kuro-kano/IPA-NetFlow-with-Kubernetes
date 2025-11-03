@@ -1,0 +1,22 @@
+# mongo-external-svc.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-svc
+  namespace: netflow
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+    protocol: TCP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: mongo-svc
+  namespace: netflow
+subsets:
+- addresses:
+  - ip: 192.168.19.16  # IP ของ rancher node ที่รัน MongoDB
+  ports:
+  - port: 27017

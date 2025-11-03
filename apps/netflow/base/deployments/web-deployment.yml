@@ -1,0 +1,33 @@
+# web-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+  namespace: netflow
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: kurokano/web:v1.0
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: configmap
+              key: DB_NAME
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: secret-value
+              key: MONGO_URI
+

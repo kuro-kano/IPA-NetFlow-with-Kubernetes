@@ -1,0 +1,19 @@
+# apps/netflow/overlays/production/patches/worker-deployment-patch.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: netflow
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: worker
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m

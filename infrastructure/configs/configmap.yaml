@@ -1,0 +1,9 @@
+# infrastructure/configs/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap
+  namespace: netflow
+data:
+  DB_NAME: "netflowdb"
+  RABBITMQ_HOST: "rabbitmq-svc"

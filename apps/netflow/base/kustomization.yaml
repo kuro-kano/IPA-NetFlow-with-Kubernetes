@@ -1,0 +1,25 @@
+    driver: local
+# apps/netflow/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: netflow
+resources:
+ # Services
+ - services/mongo-external-svc.yml
+ - services/rabbitmq-svc-clusterip.yml
+ - services/web-svc-clusterip.yml
+ - services/rabbitmq-management-clusterip.yml
+
+ # Deployments
+ - deployments/web-deployment.yml
+ - deployments/rabbitmq-deployment.yml
+ - deployments/scheduler-deployment.yml
+ - deployments/worker-deployment.yml
+
+ # Ingress
+ - ingress/web-ingress.yml
+# Common labels
+commonLabels:
+ app.kubernetes.io/managed-by: flux
+ app.kubernetes.io/part-of: ipa-netflow
+
