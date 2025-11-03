@@ -12,12 +12,11 @@
     {% for doc in details %}
     <div class="netflow-entry">
       <h3>
-        📅 {{ doc.timestamp.strftime('%Y-%m-%d %H:%M:%S') if doc.timestamp else
-        'N/A' }}
+        📅 {{ doc.timestamp.strftime('%Y-%m-%d %H:%M:%S') if doc.timestamp else 'N/A' }}
       </h3>
 
-      {% if doc.netflow_data and doc.netflow_data.output %} {% set output =
-      doc.netflow_data.output %}
+      {% if doc.netflow_data and (doc.netflow_data.flow_export or doc.netflow_data.output) %}
+      {% set output = doc.netflow_data.flow_export or doc.netflow_data.output %}
 
       <table>
         <thead>
@@ -53,7 +52,8 @@
           {% endif %}
 
           <!-- VRF -->
-          {% for line in output.split('\n') %} {% if 'VRF ID' in line %}
+          {% for line in output.split('\n') %}
+          {% if 'VRF ID' in line %}
           <tr>
             <td><strong>VRF ID</strong></td>
             <td>
@@ -98,26 +98,41 @@
           {% if 'failed' in line.lower() or 'dropped' in line.lower() %}
           <tr>
             <td>
-              {{ line.split()[0:5]|join(' ') if line.split()|length > 5 else
-              line.strip() }}
+              {{ line.split()[0:5]|join(' ') if line.split()|length > 5 else line.strip() }}
             </td>
             <td>
-              {% set value = line.strip().split()[0] %} {% if value == '0' %}
+              {% set value = line.strip().split()[0] %}
+              {% if value == '0' %}
               <span style="color: green">{{ line.strip() }}</span>
               {% else %}
               <span style="color: orange">{{ line.strip() }}</span>
               {% endif %}
             </td>
           </tr>
-          {% endif %} {% endfor %}
+          {% endif %}
+          {% endfor %}
         </tbody>
       </table>
+
+      <!-- แสดง Cache Flow ถ้ามี -->
+      {% if doc.netflow_data.cache_flow %}
+      <h4>📊 Cache Flow Information</h4>
+      <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px;">{{ doc.netflow_data.cache_flow }}</pre>
+      {% endif %}
+
+      <!-- แสดง Interfaces ถ้ามี -->
+      {% if doc.netflow_data.interfaces %}
+      <h4>🔌 NetFlow Interfaces</h4>
+      <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px;">{{ doc.netflow_data.interfaces }}</pre>
+      {% endif %}
 
       {% else %}
       <p style="color: red">⚠️ No NetFlow data available.</p>
       {% endif %}
     </div>
-    {% endfor %} {% if not details %}
+    {% endfor %}
+
+    {% if not details %}
     <div class="netflow-entry">
       <p style="color: orange">⚠️ No NetFlow history found for this router.</p>
     </div>
