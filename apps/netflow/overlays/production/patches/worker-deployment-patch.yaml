@@ -5,7 +5,7 @@ metadata:
   name: worker
   namespace: netflow
 spec:
-  replicas: 3
+  replicas: 5
   template:
     spec:
       containers:
