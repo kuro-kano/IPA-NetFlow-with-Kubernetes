@@ -1,34 +1,88 @@
+# scheduler.py
+import os
 import time
-
 from bson import json_util
 from producer import produce
 from database import get_router_info
 
-
 def scheduler():
-    INTERVAL = 60.0
+    """
+    Scheduler หลักที่รัน loop เพื่อส่ง job ไปยัง Worker
+    """
+    # อ่านค่า interval จาก environment หรือใช้ default 60 วินาที
+    INTERVAL = float(os.getenv("SCHEDULER_INTERVAL", "60"))
+    RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq-svc")
+    
+    print(f"Scheduler started with interval: {INTERVAL} seconds")
+    print(f"RabbitMQ host: {RABBITMQ_HOST}")
+    print(f"MongoDB URI: {os.getenv('MONGO_URI', 'Not set')}")
+    print(f"Database name: {os.getenv('DB_NAME', 'Not set')}")
+    
     next_run = time.monotonic()
     count = 0
-
+    
+    # รอให้ RabbitMQ และ MongoDB พร้อม
+    print("Waiting for services to be ready...")
+    time.sleep(10)
+    
     while True:
-        now = time.time()
-        now_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now))
-        ms = int((now % 1) * 1000)
-        now_str_with_ms = f"{now_str}.{ms:03d}"
-        print(f"[{now_str_with_ms}] run #{count}")
-
         try:
-            for data in get_router_info():
-                body_bytes = json_util.dumps(data).encode("utf-8")
-                produce("rabbitmq", body_bytes)
+            now = time.time()
+            now_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now))
+            ms = int((now % 1) * 1000)
+            now_str_with_ms = f"{now_str}.{ms:03d}"
+            
+            print(f"\n[{now_str_with_ms}] === Run #{count} ===")
+            
+            # ดึงข้อมูล router จาก database
+            router_data = get_router_info()
+            
+            if not router_data:
+                print("No routers found in database")
+            else:
+                # ส่ง job สำหรับแต่ละ router
+                for idx, data in enumerate(router_data):
+                    try:
+                        # แปลง BSON เป็น JSON bytes
+                        body_bytes = json_util.dumps(data).encode("utf-8")
+                        
+                        # ส่งไปยัง RabbitMQ
+                        produce(RABBITMQ_HOST, body_bytes)
+                        
+                        router_info = data.get('hostname', data.get('ip', 'unknown'))
+                        print(f"  [{idx+1}/{len(router_data)}] Sent job for router: {router_info}")
+                        
+                    except Exception as e:
+                        print(f"  Error processing router {idx+1}: {e}")
+                        continue
+                
+                print(f"Successfully sent {len(router_data)} jobs to queue")
+            
         except Exception as e:
-            print("Bruh why here")
-            print(e)
-            time.sleep(3)
+            print(f"ERROR in scheduler loop: {e}")
+            print("Retrying in 10 seconds...")
+            time.sleep(10)
+            continue
+        
         count += 1
         next_run += INTERVAL
-        time.sleep(max(0.0, next_run - time.monotonic()))
-
+        
+        # คำนวณเวลาที่ต้องรอจนถึงรอบถัดไป
+        sleep_time = max(0.0, next_run - time.monotonic())
+        
+        if sleep_time > 0:
+            print(f"Sleeping for {sleep_time:.2f} seconds until next run...")
+            time.sleep(sleep_time)
 
 if __name__ == "__main__":
-    scheduler()
+    print("=" * 60)
+    print("NetFlow Scheduler Starting...")
+    print("=" * 60)
+    
+    try:
+        scheduler()
+    except KeyboardInterrupt:
+        print("\nScheduler stopped by user")
+    except Exception as e:
+        print(f"\nScheduler crashed: {e}")
+        raise

@@ -1,5 +1,15 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
+
 WORKDIR /app
-COPY . /app
-RUN pip install -r requirements.txt 
-CMD ["python3", "-u", "scheduler.py"]
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY database.py .
+COPY producer.py .
+COPY scheduler.py .
+
+# Run scheduler
+CMD ["python", "-u", "scheduler.py"]
