@@ -25,6 +25,9 @@ Project นี้คือระบบ Network Traffic Monitoring โดยใ�
 ## วิธีการทำ
 https://www.notion.so/IPA-NetFlow-with-Kubernetes-282c39426848807e857aefd5f145490f?source=copy_link
 
+## คลิป Presentation
+https://youtu.be/e-9-mHrtR4M?si=PSH8Ytg-H747aBnr
+
 ## หมายเหตุ
 - ควรทำการ Fork ตัวของ Repository นี้แล้ว clone ไปใช้เป็นของตนเอง
 - ใช้ในการทำ FluxCD
